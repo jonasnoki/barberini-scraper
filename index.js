@@ -5,7 +5,7 @@ require('dotenv').config();
 const refreshTimeInSeconds = 30;
 
 (async () => {
-  const browser = await puppeteer.launch();//{headless: false});
+  const browser = await puppeteer.launch({args: ['--no-sandbox']});//{headless: false});
 
   const chatIds = [];
   const bot = new Telegraf(process.env.BOT_TOKEN)
