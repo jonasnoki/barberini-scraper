@@ -7,9 +7,8 @@ const numberOfMonthToCheck = 3;
 
 (async () => {
   const browser = await puppeteer.launch({args: ['--no-sandbox']});//{headless: false});
-  let lastMessage = "";
 
-  const chats = [];
+  const chats = process.env.CHATS.split(',').map(id => {return {lastMessage: "",  chatId: id}});
   const bot = new Telegraf(process.env.BOT_TOKEN)
   bot.start(async (ctx) => {
     ctx.reply("Willkommen beim Barberini Ticket Warnservice. Ich sende dir eine Nachricht sobald neue Tickets verfügbar sind!");
