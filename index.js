@@ -1,20 +1,39 @@
 const puppeteer = require('puppeteer');
 const { Telegraf } = require('telegraf');
 require('dotenv').config();
+const fs = require('fs');
 
 const refreshTimeInSeconds = 2 * 60;
 const numberOfMonthToCheck = 3;
 
+const saveChats = (chats) => {
+  fs.writeFile('chats.json', JSON.stringify(chats), function (err) {
+    if (err) throw err;
+    console.log('Chats have been saved succesfully.');
+  }); 
+}
+
 (async () => {
   const browser = await puppeteer.launch({args: ['--no-sandbox']});//{headless: false});
 
-  const chats = process.env.CHATS.split(',').map(id => {return {lastMessage: "",  chatId: id}});
+  let chats = []
+  // load chats from chats.json file
+  try {
+    chats = JSON.parse(fs.readFileSync('chats.json'));
+    console.log(chats);
+  } catch {
+    console.log("No saved chats.");
+  }
+
   const bot = new Telegraf(process.env.BOT_TOKEN)
   bot.start(async (ctx) => {
     ctx.reply("Willkommen beim Barberini Ticket Warnservice. Ich sende dir eine Nachricht sobald neue Tickets verfügbar sind!");
-    const chat = await ctx.getChat();
-    chats.push({lastMessage: "", chatId: chat.id});
+    let chat = await ctx.getChat();
+    chat.lastMessage = "",
+    chats.push(chat);
     console.log('added chat: ', chat);
+
+    saveChats(chats);
   })
   bot.hears('hi', (ctx) => ctx.reply('Hey there'))
   bot.launch()
@@ -59,15 +78,17 @@ Klicke hier um Tickets zu buchen: https://shop.museum-barberini.com/#/tickets`;
       
             if(availableDates.length > 0){
               const idsSent = [];
-              chats.forEach(({lastMessage, chatId}, chatIndex) => {
+              chats.forEach(({lastMessage, id}, chatIndex) => {
                 if(newMessage !== lastMessage){
-                  idsSent.push(chatId);
-                  bot.telegram.sendMessage(chatId, newMessage);
+                  idsSent.push(id);
+                  bot.telegram.sendMessage(id, newMessage);
                   chats[chatIndex].lastMessage = newMessage;
                 }
               })
 
               if (idsSent.length > 0){
+
+                saveChats(chats);
                 console.log(`
 Sending Message: 
 '${newMessage}' 
